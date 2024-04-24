@@ -1,5 +1,3 @@
-// NOT USED FOR ANY FA PURPOSES AS OF NOW
-
 package helpers
 
 import "fmt"
@@ -15,7 +13,7 @@ type Vertex struct {
 }
 
 type Edge struct {
-	Weight int
+	Weight rune
 	Vertex *Vertex
 }
 
@@ -23,13 +21,15 @@ func (g *Graph) AddVertex(key int) {
 	g.Vertices[key] = &Vertex{key, []*Edge{}}
 }
 
-func (g *Graph) AddEdge(from, to, weight int) error {
+func (g *Graph) AddEdge(from, to int, weight rune) error {
 
 	if _, ok := g.Vertices[from]; !ok {
-		return fmt.Errorf("source vertex not found")
+		g.AddVertex(from)
+		// return fmt.Errorf("source vertex not found")
 	}
 	if _, ok := g.Vertices[to]; !ok {
-		return fmt.Errorf("destination vertex not found")
+		g.AddVertex(to)
+		// return fmt.Errorf("destination vertex not found")
 	}
 
 	g.Vertices[from].Edges = append(g.Vertices[from].Edges, &Edge{weight, g.Vertices[to]})
@@ -71,7 +71,7 @@ func WithAdjacencyList(directed bool) func(*Graph) {
 	}
 }
 
-func GiveAllEdgesWeight(weight int) func(*Graph) {
+func GiveAllEdgesWeight(weight rune) func(*Graph) {
 	return func(g *Graph) {
 		// unoptimised takes 2e time
 		for _, vertex := range g.Vertices {
