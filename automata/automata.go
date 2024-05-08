@@ -11,8 +11,6 @@ type State int
 
 type Symbol rune
 
-const phi State = -1
-
 type TransitionFunction map[StateInput][]State
 
 type StateInput struct {
@@ -40,6 +38,14 @@ func NewDFA() *DFA {
 	}
 	d.AddGraph()
 	return d
+}
+
+func (s *StateInput) GetSourceState() State {
+	return s.sourceState
+}
+
+func (s *StateInput) GetSourceSymbol() Symbol {
+	return s.symbol
 }
 
 func (d *DFA) SetStates(state []State) {
@@ -188,6 +194,8 @@ func decompressState(state State) ([]State, error) {
 func (n *DFA) NfaToDfa() *DFA {
 	d := NewDFA()
 	d.SetInitialState(n.initialState)
+	d.states = append(d.states, d.GetInitialState())
+	d.SetInputAlphabet(n.inputAlphabet)
 	n.AddState(d, d.initialState)
 	return d
 }
@@ -199,15 +207,9 @@ func (n *DFA) AddState(d *DFA, state State) error {
 		return err
 	}
 
-	fmt.Println(n.GetTransitionFunctions())
-
 	for _, input := range n.inputAlphabet {
 		var final []State
 		for _, state := range states {
-			b, okk := n.transitionFunctions[StateInput{0, input}]
-			if okk {
-				fmt.Println(b)
-			}
 			a, ok := n.transitionFunctions[StateInput{state, input}]
 			if ok {
 				exists := false
@@ -226,11 +228,26 @@ func (n *DFA) AddState(d *DFA, state State) error {
 				}
 			}
 		}
+
+		//check and add state to final
+		if len(final) != 0 {
+			add := false
+			for _, ok := range final {
+				if ifExists(n.finalState, ok) {
+					add = true
+				}
+			}
+			if add {
+				d.SetFinalState(append(d.finalState, compressState(final)))
+			}
+		}
+
 		if len(final) == 0 || (compressState(final)) == state {
 			continue
 		}
-
-		fmt.Println(state)
+		if !ifExists(d.states, compressState(final)) {
+			d.states = append(d.states, compressState(final))
+		}
 		d.AddTransitionFunctions(state, input, []State{compressState(final)})
 		err := n.AddState(d, compressState(final))
 		if err != nil {
